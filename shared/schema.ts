@@ -1,11 +1,11 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar, jsonb, index } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, real, blob } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   email: text("email").unique(),
   aadhaarNumber: text("aadhaar_number").unique(),
@@ -14,15 +14,15 @@ export const users = pgTable("users", {
   wardNumber: text("ward_number"),
   district: text("district"),
   state: text("state"),
-  isVerified: boolean("is_verified").default(false),
+  isVerified: integer("is_verified", { mode: 'boolean' }).default(false),
   profileImageUrl: text("profile_image_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Issues table
-export const issues = pgTable("issues", {
-  id: serial("id").primaryKey(),
+export const issues = sqliteTable("issues", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
@@ -32,67 +32,67 @@ export const issues = pgTable("issues", {
   wardNumber: text("ward_number").notNull(),
   district: text("district").notNull(),
   state: text("state").notNull(),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
-  mediaUrls: jsonb("media_urls").$type<string[]>().default([]),
-  visScore: decimal("vis_score", { precision: 5, scale: 2 }).default("0"),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  mediaUrls: text("media_urls", { mode: 'json' }).$type<string[]>().default([]),
+  visScore: real("vis_score").default(0),
   voteCount: integer("vote_count").default(0),
   commentCount: integer("comment_count").default(0),
-  supportPercentage: decimal("support_percentage", { precision: 5, scale: 2 }).default("0"),
-  isAnonymous: boolean("is_anonymous").default(false),
+  supportPercentage: real("support_percentage").default(0),
+  isAnonymous: integer("is_anonymous", { mode: 'boolean' }).default(false),
   createdBy: integer("created_by").references(() => users.id),
   assignedTo: integer("assigned_to").references(() => users.id),
-  resolvedAt: timestamp("resolved_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: integer("resolved_at", { mode: 'timestamp' }),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Votes table
-export const votes = pgTable("votes", {
-  id: serial("id").primaryKey(),
+export const votes = sqliteTable("votes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   issueId: integer("issue_id").references(() => issues.id, { onDelete: "cascade" }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(), // 1-5 stars
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Comments table
-export const comments = pgTable("comments", {
-  id: serial("id").primaryKey(),
+export const comments = sqliteTable("comments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   issueId: integer("issue_id").references(() => issues.id, { onDelete: "cascade" }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
-  isAnonymous: boolean("is_anonymous").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  isAnonymous: integer("is_anonymous", { mode: 'boolean' }).default(false),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Status Updates table
-export const statusUpdates = pgTable("status_updates", {
-  id: serial("id").primaryKey(),
+export const statusUpdates = sqliteTable("status_updates", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   issueId: integer("issue_id").references(() => issues.id, { onDelete: "cascade" }),
   userId: integer("user_id").references(() => users.id),
   status: text("status").notNull(),
   message: text("message"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // User Activity table
-export const userActivity = pgTable("user_activity", {
-  id: serial("id").primaryKey(),
+export const userActivity = sqliteTable("user_activity", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   activityType: text("activity_type").notNull(),
-  activityData: jsonb("activity_data"),
-  createdAt: timestamp("created_at").defaultNow(),
+  activityData: text("activity_data", { mode: 'json' }),
+  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // User Badges table
-export const userBadges = pgTable("user_badges", {
-  id: serial("id").primaryKey(),
+export const userBadges = sqliteTable("user_badges", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   badgeType: text("badge_type").notNull(),
   badgeName: text("badge_name").notNull(),
   description: text("description"),
-  earnedAt: timestamp("earned_at").defaultNow(),
+  earnedAt: integer("earned_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // Relations

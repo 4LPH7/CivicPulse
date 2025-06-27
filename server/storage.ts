@@ -443,7 +443,7 @@ export class DatabaseStorage implements IStorage {
         resolvedIssues: count(sql`CASE WHEN status = 'resolved' THEN 1 END`),
         criticalIssues: count(sql`CASE WHEN severity = 'critical' THEN 1 END`),
         inProgressIssues: count(sql`CASE WHEN status = 'in_progress' THEN 1 END`),
-        avgResponseTime: avg(sql`EXTRACT(DAY FROM (resolved_at - created_at))`),
+        avgResponseTime: avg(sql`julianday(resolved_at) - julianday(created_at)`),
       })
       .from(issues)
       .where(whereClause);
@@ -588,9 +588,9 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(issues)
       .set({ 
-        visScore: visScore.toFixed(2),
+        visScore: visScore,
         voteCount,
-        supportPercentage: supportPercentage.toFixed(2),
+        supportPercentage: supportPercentage,
         updatedAt: new Date()
       })
       .where(eq(issues.id, issueId));
