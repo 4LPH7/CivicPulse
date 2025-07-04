@@ -27,6 +27,14 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Ensure uploads directory exists
+  try {
+    await fs.access('uploads');
+  } catch (error) {
+    console.log('Creating uploads directory...');
+    await fs.mkdir('uploads', { recursive: true });
+  }
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time updates
