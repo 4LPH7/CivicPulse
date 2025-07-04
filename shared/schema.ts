@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, blob } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -7,8 +7,8 @@ import { z } from "zod";
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  email: text("email").unique(),
-  aadhaarNumber: text("aadhaar_number").unique(),
+  email: text("email"),
+  aadhaarNumber: text("aadhaar_number"),
   phoneNumber: text("phone_number"),
   address: text("address"),
   wardNumber: text("ward_number"),
@@ -147,7 +147,7 @@ export const commentsRelations = relations(comments, ({ one }) => ({
 export const statusUpdatesRelations = relations(statusUpdates, ({ one }) => ({
   issue: one(issues, {
     fields: [statusUpdates.issueId],
-    references: [issues.id],
+    references: [statusUpdates.id],
   }),
   user: one(users, {
     fields: [statusUpdates.userId],

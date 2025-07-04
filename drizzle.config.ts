@@ -4,7 +4,8 @@ export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts",
   dialect: "sqlite",
+  driver: "libsql",
   dbCredentials: {
-    url: "./civicpulse.db",
+    url: ":memory:",
   },
 });
