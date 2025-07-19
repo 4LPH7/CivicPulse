@@ -9,6 +9,7 @@ import CreateIssueModal from '@/components/CreateIssueModal';
 import IssueCard from '@/components/IssueCard';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { apiRequest } from '@/lib/queryClient';
+import type { IssueWithDetails, VoteData } from '@/lib/types';
 
 export default function Issues() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -20,7 +21,7 @@ export default function Issues() {
   const [hasMore, setHasMore] = useState(true);
   const { lastMessage } = useWebSocket();
 
-  const { data: issues, refetch } = useQuery({
+  const { data: issues, refetch } = useQuery<IssueWithDetails[]>({
     queryKey: ['/api/issues', { 
       search: searchTerm, 
       category, 
@@ -31,7 +32,7 @@ export default function Issues() {
     }],
   });
 
-  const { data: userVotes } = useQuery({
+  const { data: userVotes } = useQuery<VoteData[]>({
     queryKey: ['/api/user/votes'],
   });
 
@@ -162,10 +163,10 @@ export default function Issues() {
 
       {/* Issues List */}
       <div className="space-y-6">
-        {issues && issues.length > 0 ? (
+        {issues && Array.isArray(issues) && issues.length > 0 ? (
           <>
-            {issues.map((issue: any) => {
-              const userVote = userVotes?.find((v: any) => v.issueId === issue.id);
+            {issues.map((issue: IssueWithDetails) => {
+              const userVote = userVotes?.find((v: VoteData) => v.issueId === issue.id);
               return (
                 <IssueCard
                   key={issue.id}

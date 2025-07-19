@@ -19,29 +19,42 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { formatTimeAgo, getCategoryColor, getStatusColor, getStatusText } from '@/lib/utils';
+import type { UserWithStats, IssueWithDetails, UserActivityItem, UserBadge } from '@/lib/types';
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Fetch user profile data
-  const { data: userProfile } = useQuery({
+  const { data: userProfile } = useQuery<UserWithStats>({
     queryKey: ['/api/user/profile'],
   });
 
-  const { data: userActivity } = useQuery({
+  const { data: userActivity } = useQuery<UserActivityItem[]>({
     queryKey: ['/api/user/activity'],
   });
 
-  const { data: userBadges } = useQuery({
+  const { data: userBadges } = useQuery<UserBadge[]>({
     queryKey: ['/api/user/badges'],
   });
 
-  const { data: userIssues } = useQuery({
+  const { data: userIssues } = useQuery<IssueWithDetails[]>({
     queryKey: ['/api/issues', { createdBy: userProfile?.id }],
   });
 
-  const userStats = userProfile?._count || {};
-  const user = userProfile || {};
+  const userStats = userProfile?._count || {
+    issues: 0,
+    votes: 0,
+    resolvedIssues: 0,
+  };
+  const user = userProfile || {
+    name: '',
+    email: '',
+    address: '',
+    isVerified: false,
+    createdAt: new Date(),
+    wardNumber: '',
+    district: '',
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -219,8 +232,8 @@ export default function Profile() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {userActivity && userActivity.length > 0 ? (
-              userActivity.slice(0, 10).map((activity: any, index: number) => (
+            {userActivity && Array.isArray(userActivity) && userActivity.length > 0 ? (
+              userActivity.slice(0, 10).map((activity: UserActivityItem, index: number) => (
                 <div key={index} className={`border-l-4 pl-4 ${
                   activity.activityType === 'vote_cast' ? 'border-green-500' :
                   activity.activityType === 'issue_created' ? 'border-blue-500' :
@@ -264,8 +277,8 @@ export default function Profile() {
             <CardTitle>My Issues</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {userIssues && userIssues.length > 0 ? (
-              userIssues.slice(0, 5).map((issue: any) => (
+            {userIssues && Array.isArray(userIssues) && userIssues.length > 0 ? (
+              userIssues.slice(0, 5).map((issue: IssueWithDetails) => (
                 <div key={issue.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

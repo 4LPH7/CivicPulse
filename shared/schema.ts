@@ -147,7 +147,7 @@ export const commentsRelations = relations(comments, ({ one }) => ({
 export const statusUpdatesRelations = relations(statusUpdates, ({ one }) => ({
   issue: one(issues, {
     fields: [statusUpdates.issueId],
-    references: [statusUpdates.id],
+    references: [issues.id],
   }),
   user: one(users, {
     fields: [statusUpdates.userId],

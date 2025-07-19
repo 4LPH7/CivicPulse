@@ -210,9 +210,7 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     offset?: number;
   } = {}): Promise<IssueWithDetails[]> {
-    let query = db.select().from(issues);
-
-    // Apply filters
+    // Build filters
     const conditions = [];
     if (filters.category) conditions.push(eq(issues.category, filters.category));
     if (filters.status) conditions.push(eq(issues.status, filters.status));
@@ -228,55 +226,61 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Apply sorting
+    // Build sorting
     const sortBy = filters.sortBy || 'vis_score';
     const sortOrder = filters.sortOrder || 'desc';
     
+    let orderByClause;
     if (sortOrder === 'desc') {
       switch (sortBy) {
         case 'vis_score':
-          query = query.orderBy(desc(issues.visScore));
+          orderByClause = desc(issues.visScore);
           break;
         case 'created_at':
-          query = query.orderBy(desc(issues.createdAt));
+          orderByClause = desc(issues.createdAt);
           break;
         case 'vote_count':
-          query = query.orderBy(desc(issues.voteCount));
+          orderByClause = desc(issues.voteCount);
           break;
         case 'support_percentage':
-          query = query.orderBy(desc(issues.supportPercentage));
+          orderByClause = desc(issues.supportPercentage);
           break;
         default:
-          query = query.orderBy(desc(issues.visScore));
+          orderByClause = desc(issues.visScore);
       }
     } else {
       switch (sortBy) {
         case 'vis_score':
-          query = query.orderBy(asc(issues.visScore));
+          orderByClause = asc(issues.visScore);
           break;
         case 'created_at':
-          query = query.orderBy(asc(issues.createdAt));
+          orderByClause = asc(issues.createdAt);
           break;
         case 'vote_count':
-          query = query.orderBy(asc(issues.voteCount));
+          orderByClause = asc(issues.voteCount);
           break;
         case 'support_percentage':
-          query = query.orderBy(asc(issues.supportPercentage));
+          orderByClause = asc(issues.supportPercentage);
           break;
         default:
-          query = query.orderBy(asc(issues.visScore));
+          orderByClause = asc(issues.visScore);
       }
     }
 
-    // Apply pagination
-    if (filters.limit) query = query.limit(filters.limit);
-    if (filters.offset) query = query.offset(filters.offset);
-
-    const issuesList = await query;
+    // Execute query with proper typing
+    let issuesList;
+    if (conditions.length > 0) {
+      issuesList = await db.select().from(issues)
+        .where(and(...conditions))
+        .orderBy(orderByClause)
+        .limit(filters.limit || 100)
+        .offset(filters.offset || 0);
+    } else {
+      issuesList = await db.select().from(issues)
+        .orderBy(orderByClause)
+        .limit(filters.limit || 100)
+        .offset(filters.offset || 0);
+    }
 
     // Fetch related data for each issue
     const issuesWithDetails = await Promise.all(
