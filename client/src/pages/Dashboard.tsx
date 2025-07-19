@@ -9,25 +9,26 @@ import IssueCard from '@/components/IssueCard';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { formatNumber } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
+import type { AnalyticsData, HotIssue, UserWithStats, UserActivityItem, IssueWithDetails } from '@/lib/types';
 
 export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { lastMessage } = useWebSocket();
 
   // Fetch dashboard data
-  const { data: analytics, refetch: refetchAnalytics } = useQuery({
+  const { data: analytics, refetch: refetchAnalytics } = useQuery<AnalyticsData>({
     queryKey: ['/api/analytics/dashboard'],
   });
 
-  const { data: hotIssues, refetch: refetchHotIssues } = useQuery({
+  const { data: hotIssues, refetch: refetchHotIssues } = useQuery<HotIssue[]>({
     queryKey: ['/api/issues/hot'],
   });
 
-  const { data: userProfile } = useQuery({
+  const { data: userProfile } = useQuery<UserWithStats>({
     queryKey: ['/api/user/profile'],
   });
 
-  const { data: userActivity } = useQuery({
+  const { data: userActivity } = useQuery<UserActivityItem[]>({
     queryKey: ['/api/user/activity'],
   });
 
@@ -83,8 +84,21 @@ export default function Dashboard() {
     }
   };
 
-  const stats = analytics?.issueStats || {};
-  const userStats = analytics?.userStats || {};
+  const stats = analytics?.issueStats || {
+    totalIssues: 0,
+    resolvedIssues: 0,
+    inProgressIssues: 0,
+    pendingIssues: 0,
+    averageResolutionTime: 0,
+  };
+  const userStats = analytics?.userStats || {
+    issuesRaised: 0,
+    votescast: 0,
+    votesCast: 0,
+    commentsposted: 0,
+    badgesEarned: 0,
+    issuesResolved: 0,
+  };
 
   return (
     <div className="space-y-8">
@@ -167,11 +181,11 @@ export default function Dashboard() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {hotIssues && hotIssues.length > 0 ? (
-            hotIssues.slice(0, 3).map((issue: any) => (
+          {hotIssues && Array.isArray(hotIssues) && hotIssues.length > 0 ? (
+            hotIssues.slice(0, 3).map((issue: HotIssue) => (
               <IssueCard
                 key={issue.id}
-                issue={issue}
+                issue={issue as IssueWithDetails}
                 onVote={(rating) => handleVote(issue.id, rating)}
                 onShare={() => handleShare(issue)}
                 compact
@@ -194,8 +208,8 @@ export default function Dashboard() {
             <CardTitle>Your Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {userActivity && userActivity.length > 0 ? (
-              userActivity.slice(0, 5).map((activity: any, index: number) => (
+            {userActivity && Array.isArray(userActivity) && userActivity.length > 0 ? (
+              userActivity.slice(0, 5).map((activity: UserActivityItem, index: number) => (
                 <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <div className="bg-green-100 p-2 rounded-full">
                     {activity.activityType === 'vote_cast' ? (

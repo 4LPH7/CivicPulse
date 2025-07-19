@@ -26,19 +26,26 @@ import { Progress } from '@/components/ui/progress';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { formatTimeAgo, getCategoryColor, getStatusColor, getStatusText, formatNumber } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
+import type { AnalyticsData, IssueWithDetails } from '@/lib/types';
 
 export default function Government() {
-  const [selectedWard, setSelectedWard] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedWard, setSelectedWard] = useState('all');
+  const [selectedDistrict, setSelectedDistrict] = useState('all');
   const { lastMessage } = useWebSocket();
 
   // Fetch government analytics
-  const { data: analytics, refetch } = useQuery({
-    queryKey: ['/api/analytics/government', { wardNumber: selectedWard, district: selectedDistrict }],
+  const { data: analytics, refetch } = useQuery<AnalyticsData>({
+    queryKey: ['/api/analytics/government', { 
+      wardNumber: selectedWard === 'all' ? undefined : selectedWard, 
+      district: selectedDistrict === 'all' ? undefined : selectedDistrict 
+    }],
   });
 
-  const { data: priorityIssues, refetch: refetchPriority } = useQuery({
-    queryKey: ['/api/issues/priority', { wardNumber: selectedWard, district: selectedDistrict }],
+  const { data: priorityIssues, refetch: refetchPriority } = useQuery<IssueWithDetails[]>({
+    queryKey: ['/api/issues/priority', { 
+      wardNumber: selectedWard === 'all' ? undefined : selectedWard, 
+      district: selectedDistrict === 'all' ? undefined : selectedDistrict 
+    }],
   });
 
   // Handle real-time updates
@@ -84,7 +91,15 @@ export default function Government() {
     URL.revokeObjectURL(url);
   };
 
-  const stats = analytics?.issueStats || {};
+  const stats = analytics?.issueStats || {
+    totalIssues: 0,
+    resolvedIssues: 0,
+    inProgressIssues: 0,
+    pendingIssues: 0,
+    averageResolutionTime: 0,
+    criticalIssues: 0,
+    avgResponseTime: 0,
+  };
   const categoryStats = analytics?.categoryStats || [];
 
   return (
@@ -103,7 +118,7 @@ export default function Government() {
                   <SelectValue placeholder="All Wards" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Wards</SelectItem>
+                  <SelectItem value="all">All Wards</SelectItem>
                   <SelectItem value="Ward 184">Ward 184 - Koramangala</SelectItem>
                   <SelectItem value="Ward 71">Ward 71 - Indiranagar</SelectItem>
                   <SelectItem value="Ward 150">Ward 150 - HSR Layout</SelectItem>
@@ -206,8 +221,8 @@ export default function Government() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {priorityIssues && priorityIssues.length > 0 ? (
-                  priorityIssues.slice(0, 10).map((issue: any) => {
+                {priorityIssues && Array.isArray(priorityIssues) && priorityIssues.length > 0 ? (
+                  priorityIssues.slice(0, 10).map((issue: IssueWithDetails) => {
                     const daysSinceCreated = Math.floor(
                       (Date.now() - new Date(issue.createdAt).getTime()) / (1000 * 60 * 60 * 24)
                     );
